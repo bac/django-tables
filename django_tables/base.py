@@ -338,6 +338,9 @@ class BoundColumn:
         s = self.column.verbose_name or self.name.replace('_', ' ')
         return capfirst(force_text(s))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def as_html(self):
         pass
 
