@@ -2,7 +2,11 @@ from past.builtins import cmp
 from builtins import str
 from past.builtins import basestring
 from builtins import object
+from operator import attrgetter
+
 import copy
+
+
 from django.http import Http404
 from django.core import paginator
 from django.utils.datastructures import SortedDict
@@ -12,16 +16,6 @@ from django.utils.text import capfirst
 from .columns import Column
 from .options import options
 from future.utils import with_metaclass
-
-try:
-    from django.utils.encoding import StrAndUnicode
-except ImportError:
-    from django.utils.encoding import python_2_unicode_compatible
-
-    @python_2_unicode_compatible
-    class StrAndUnicode(object):
-        def __str__(self):
-            return self.code
 
 
 __all__ = ('BaseTable', 'options')
@@ -66,8 +60,7 @@ class DeclarativeColumnsMetaclass(type):
         columns = [(column_name, attrs.pop(column_name))
            for column_name, obj in list(attrs.items())
            if isinstance(obj, Column)]
-        columns.sort(key=lambda x, y: cmp(x[1].creation_counter,
-                                          y[1].creation_counter))
+        columns.sort(key=lambda x: x[1].creation_counter)
 
         # If this class is subclassing other tables, add their fields as
         # well. Note that we loop over the bases in *reverse* - this is
@@ -101,7 +94,7 @@ def toggleprefix(s):
     """Remove - prefix is existing, or add if missing."""
     return ((s[:1] == '-') and [s[1:]] or ["-"+s])[0]
 
-class OrderByTuple(tuple, StrAndUnicode):
+class OrderByTuple(tuple):
         """Stores 'order by' instructions; Used to render output in a format
         we understand as input (see __unicode__) - especially useful in
         templates.
@@ -277,7 +270,7 @@ class Columns(object):
         return self._columns[name]
 
 
-class BoundColumn(StrAndUnicode):
+class BoundColumn:
     """'Runtime' version of ``Column`` that is bound to a table instance,
     and thus knows about the table's data.
 
