@@ -12,9 +12,14 @@ Examples:
     {% set_url_param filter="books" page=1 %}
 """
 
-import urllib
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import str
+import urllib.request, urllib.parse, urllib.error
 import tokenize
-import StringIO
+import io
+
 from django import template
 from django.utils.safestring import mark_safe
 
@@ -32,10 +37,10 @@ class SetUrlParamNode(template.Node):
         # don't use it's ``copy()`` method), as it would force all values
         # to be unicode, and ``urllib.urlencode`` can't handle that.
         params = dict(request.GET)
-        for key, newvalue in self.changes.items():
+        for key, newvalue in list(self.changes.items()):
             newvalue = newvalue.resolve(context)
             if newvalue=='' or newvalue is None: params.pop(key, False)
-            else: params[key] = unicode(newvalue)
+            else: params[key] = str(newvalue)
         # ``urlencode`` chokes on unicode input, so convert everything to
         # utf8. Note that if some query arguments passed to the site have
         # their non-ascii characters screwed up when passed though this,
@@ -47,11 +52,11 @@ class SetUrlParamNode(template.Node):
         # iso-8859-1), but Django might expect utf-8, where ä would be
         # "%C3%A4"
         def mkstr(s):
-            if isinstance(s, list): return map(mkstr, s)
-            else: return (isinstance(s, unicode) and [s.encode('utf-8')] or [s])[0]
-        params = dict([(mkstr(k), mkstr(v)) for k, v in params.items()])
+            if isinstance(s, list): return list(map(mkstr, s))
+            else: return (isinstance(s, str) and [s.encode('utf-8')] or [s])[0]
+        params = dict([(mkstr(k), mkstr(v)) for k, v in list(params.items())])
         # done, return (string is already safe)
-        return '?'+urllib.urlencode(params, doseq=True)
+        return '?'+urllib.parse.urlencode(params, doseq=True)
 
 def do_seturlparam(parser, token):
     bits = token.contents.split()
@@ -59,14 +64,14 @@ def do_seturlparam(parser, token):
     for i in bits[1:]:
         try:
             a, b = i.split('=', 1); a = a.strip(); b = b.strip()
-            keys = list(tokenize.generate_tokens(StringIO.StringIO(a).readline))
+            keys = list(tokenize.generate_tokens(io.StringIO(a).readline))
             if keys[0][0] == tokenize.NAME:
                 if b == '""': b = template.Variable('""')  # workaround bug #5270
                 else: b = parser.compile_filter(b)
                 qschanges[str(a)] = b
             else: raise ValueError
         except ValueError:
-            raise template.TemplateSyntaxError, "Argument syntax wrong: should be key=value"
+            raise template.TemplateSyntaxError("Argument syntax wrong: should be key=value")
     return SetUrlParamNode(qschanges)
 
 register.tag('set_url_param', do_seturlparam)

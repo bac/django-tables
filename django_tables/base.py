@@ -1,11 +1,17 @@
+from past.builtins import cmp
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import copy
 from django.http import Http404
 from django.core import paginator
 from django.utils.datastructures import SortedDict
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.utils.text import capfirst
-from columns import Column
-from options import options
+
+from .columns import Column
+from .options import options
+from future.utils import with_metaclass
 
 try:
     from django.utils.encoding import StrAndUnicode
@@ -13,7 +19,7 @@ except ImportError:
     from django.utils.encoding import python_2_unicode_compatible
 
     @python_2_unicode_compatible
-    class StrAndUnicode:
+    class StrAndUnicode(object):
         def __str__(self):
             return self.code
 
@@ -58,10 +64,10 @@ class DeclarativeColumnsMetaclass(type):
 
         # extract declared columns
         columns = [(column_name, attrs.pop(column_name))
-           for column_name, obj in attrs.items()
+           for column_name, obj in list(attrs.items())
            if isinstance(obj, Column)]
-        columns.sort(lambda x, y: cmp(x[1].creation_counter,
-                                      y[1].creation_counter))
+        columns.sort(key=lambda x, y: cmp(x[1].creation_counter,
+                                          y[1].creation_counter))
 
         # If this class is subclassing other tables, add their fields as
         # well. Note that we loop over the bases in *reverse* - this is
@@ -71,7 +77,7 @@ class DeclarativeColumnsMetaclass(type):
                 and parent_cols_from\
                 or 'base_columns'
             if hasattr(base, col_attr):
-                columns = getattr(base, col_attr).items() + columns
+                columns = list(getattr(base, col_attr).items()) + columns
         # Note that we are reusing an existing ``base_columns`` attribute.
         # This is because in certain inheritance cases (mixing normal and
         # ModelTables) this metaclass might be executed twice, and we need
@@ -199,7 +205,7 @@ class Columns(object):
         # ``base_columns`` might have changed since last time); creating
         # BoundColumn instances can be costly, so we reuse existing ones.
         new_columns = SortedDict()
-        for decl_name, column in self.table.base_columns.items():
+        for decl_name, column in list(self.table.base_columns.items()):
             # take into account name overrides
             exposed_name = column.name or decl_name
             if exposed_name in self._columns:
@@ -215,17 +221,17 @@ class Columns(object):
         This is used internally a lot.
         """
         self._spawn_columns()
-        for column in self._columns.values():
+        for column in list(self._columns.values()):
             yield column
 
     def items(self):
         self._spawn_columns()
-        for r in self._columns.items():
+        for r in list(self._columns.items()):
             yield r
 
     def names(self):
         self._spawn_columns()
-        for r in self._columns.keys():
+        for r in list(self._columns.keys()):
             yield r
 
     def index(self, name):
@@ -263,7 +269,7 @@ class Columns(object):
 
     def __len__(self):
         self._spawn_columns()
-        return len([1 for c in self._columns.values() if c.visible])
+        return len([1 for c in list(self._columns.values()) if c.visible])
 
     def __getitem__(self, name):
         """Return a column by name."""
@@ -337,7 +343,7 @@ class BoundColumn(StrAndUnicode):
 
     def __unicode__(self):
         s = self.column.verbose_name or self.name.replace('_', ' ')
-        return capfirst(force_unicode(s))
+        return capfirst(force_text(s))
 
     def as_html(self):
         pass
@@ -441,11 +447,9 @@ class Rows(object):
             raise TypeError('Key must be a slice or integer.')
 
 
-class BaseTable(object):
+class BaseTable(with_metaclass(DeclarativeColumnsMetaclass, object)):
     """A collection of columns, plus their associated data rows.
     """
-
-    __metaclass__ = DeclarativeColumnsMetaclass
 
     rows_class = Rows
 
@@ -620,5 +624,5 @@ class BaseTable(object):
         self.paginator = klass(self.rows, *args, **kwargs)
         try:
             self.page = self.paginator.page(page)
-        except paginator.InvalidPage, e:
+        except paginator.InvalidPage as e:
             raise Http404(str(e))

@@ -1,7 +1,9 @@
 from django.core.exceptions import FieldError
 from django.utils.datastructures import SortedDict
-from base import BaseTable, DeclarativeColumnsMetaclass, \
+
+from .base import BaseTable, DeclarativeColumnsMetaclass, \
     Column, BoundRow, Rows, TableOptions, rmprefix, toggleprefix
+from future.utils import with_metaclass
 
 
 __all__ = ('ModelTable',)
@@ -130,7 +132,7 @@ class ModelTableMetaclass(DeclarativeColumnsMetaclass):
         return self
 
 
-class ModelTable(BaseTable):
+class ModelTable(with_metaclass(ModelTableMetaclass, BaseTable)):
     """Table that is based on a model.
 
     Similar to ModelForm, a column will automatically be created for all
@@ -148,8 +150,6 @@ class ModelTable(BaseTable):
     just don't any data at all, the model the table is based on will
     provide it.
     """
-
-    __metaclass__ = ModelTableMetaclass
 
     rows_class = ModelRows
 

@@ -2,7 +2,10 @@
 
 Sets up a temporary Django project using a memory SQLite database.
 """
+from __future__ import print_function
 
+from builtins import range
+from builtins import object
 from nose.tools import assert_raises, assert_equal
 from django.conf import settings
 from django.core.paginator import *
@@ -22,7 +25,7 @@ def setup_module(module):
     class City(models.Model):
         name = models.TextField()
         population = models.IntegerField(null=True)
-        class Meta:
+        class Meta(object):
             app_label = 'testapp'
     module.City = City
 
@@ -36,7 +39,7 @@ def setup_module(module):
         null2 = models.TextField(blank=True, null=True)  #  - " -
         def example_domain(self):
             return 'example.%s' % self.tld
-        class Meta:
+        class Meta(object):
             app_label = 'testapp'
     module.Country = Country
 
@@ -52,13 +55,13 @@ def setup_module(module):
     Country(name="Netherlands", tld="nl", population=16, system="monarchy", capital=amsterdam).save()
 
 
-class TestDeclaration:
+class TestDeclaration(object):
     """Test declaration, declared columns and default model field columns.
     """
 
     def test_autogen_basic(self):
         class CountryTable(tables.ModelTable):
-            class Meta:
+            class Meta(object):
                 model = Country
 
         assert len(CountryTable.base_columns) == 8
@@ -69,7 +72,7 @@ class TestDeclaration:
         class CountryTable(tables.ModelTable):
             capital = tables.TextColumn(verbose_name='Name of capital')
             projected = tables.Column(verbose_name="Projected Population")
-            class Meta:
+            class Meta(object):
                 model = Country
                 exclude = ['tld']
 
@@ -80,12 +83,12 @@ class TestDeclaration:
 
         # Inheritance (with a different model) + field restrictions
         class CityTable(CountryTable):
-            class Meta:
+            class Meta(object):
                 model = City
                 columns = ['id', 'name']
                 exclude = ['capital']
 
-        print CityTable.base_columns
+        print(CityTable.base_columns)
         assert len(CityTable.base_columns) == 4
         assert 'id' in CityTable.base_columns
         assert 'name' in CityTable.base_columns
@@ -98,7 +101,7 @@ class TestDeclaration:
         """
         class CountryTable(tables.ModelTable):
             foo = tables.Column()
-            class Meta:
+            class Meta(object):
                 model = Country
                 columns = ('system', 'population', 'foo', 'tld',)
 
@@ -108,7 +111,7 @@ class TestDeclaration:
         """Tests that the model field's verbose_name is used for the column
         """
         class CountryTable(tables.ModelTable):
-            class Meta:
+            class Meta(object):
                 model = Country
                 columns = ('tld',)
 
@@ -122,7 +125,7 @@ def test_basic():
     class CountryTable(tables.ModelTable):
         null = tables.Column(default="foo")
         tld = tables.Column(name="domain")
-        class Meta:
+        class Meta(object):
             model = Country
             exclude = ('id',)
     countries = CountryTable()
@@ -181,7 +184,7 @@ def test_caches():
     reimplemented).
     """
     class CountryTable(tables.ModelTable):
-        class Meta:
+        class Meta(object):
             model = Country
             exclude = ('id',)
     countries = CountryTable()
@@ -204,7 +207,7 @@ def test_sort():
         system = tables.Column(default="republic")
         custom1 = tables.Column()
         custom2 = tables.Column(sortable=True)
-        class Meta:
+        class Meta(object):
             model = Country
     countries = CountryTable()
 
@@ -230,7 +233,7 @@ def test_sort():
     # test column with a default ``direction`` set to descending
     class CityTable(tables.ModelTable):
         name = tables.Column(direction='desc')
-        class Meta:
+        class Meta(object):
             model = City
     cities = CityTable()
     test_order('name', [1,2], table=cities)   # Berlin to Amsterdam
@@ -246,7 +249,7 @@ def test_sort():
 
 def test_default_sort():
     class SortedCountryTable(tables.ModelTable):
-        class Meta:
+        class Meta(object):
             model = Country
             order_by = '-name'
 
@@ -269,7 +272,7 @@ def test_callable():
     class CountryTable(tables.ModelTable):
         null = tables.Column(default=lambda s: s['example_domain'])
         example_domain = tables.Column()
-        class Meta:
+        class Meta(object):
             model = Country
     countries = CountryTable(Country)
 
@@ -290,7 +293,7 @@ def test_relationships():
         capital_name = tables.Column(data='capital__name')
         capital__population = tables.Column(name="capital_population")
         invalid = tables.Column(data="capital__invalid")
-        class Meta:
+        class Meta(object):
             model = Country
     countries = CountryTable(Country.objects.select_related('capital'))
 
@@ -319,7 +322,7 @@ def test_pagination():
     from django.db import connection
 
     class CityTable(tables.ModelTable):
-        class Meta:
+        class Meta(object):
             model = City
             columns = ['name']
     cities = CityTable()

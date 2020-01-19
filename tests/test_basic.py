@@ -2,6 +2,8 @@
 """
 
 
+from builtins import range
+from builtins import object
 from nose.tools import assert_raises, assert_equal
 from django.http import Http404
 from django.core.paginator import Paginator
@@ -82,7 +84,7 @@ def test_sort():
 
     # default sort order can be specified in table options
     class MySortedTable(MyUnsortedTable):
-        class Meta:
+        class Meta(object):
             order_by = 'alpha'
 
     # order_by is inherited from the options if not explitly set

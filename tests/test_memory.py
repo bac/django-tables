@@ -3,7 +3,11 @@
 TODO: A bunch of those tests probably fit better into test_basic, since
 they aren't really MemoryTable specific.
 """
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
+from builtins import object
 from math import sqrt
 from nose.tools import assert_raises
 from django.core.paginator import Paginator
@@ -70,7 +74,7 @@ def test_basic():
         tables.options.IGNORE_INVALID_OPTIONS = True
 
 
-class TestRender:
+class TestRender(object):
     """Test use of the render_* methods.
     """
 
@@ -127,7 +131,7 @@ def test_meta_sortable():
             id = tables.Column(sortable=True)
             name = tables.Column(sortable=False)
             author = tables.Column()
-            class Meta:
+            class Meta(object):
                 sortable = default_sortable
         return BookTable([])
 
@@ -253,7 +257,7 @@ def test_callable():
     # function is called when queried
     def calc(op, lhs, rhs):
         if op == '+': return lhs+rhs
-        elif op == '/': return lhs/rhs
+        elif op == '/': return old_div(lhs,rhs)
         elif op == '-': return lhs-rhs
     assert [calc(row['op'], row['lhs'], row['rhs']) for row in math] == [4,1,3]
 

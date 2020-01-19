@@ -1,5 +1,7 @@
+from past.builtins import cmp
 import copy
-from base import BaseTable, BoundRow
+
+from .base import BaseTable, BoundRow
 
 
 __all__ = ('MemoryTable', 'Table',)

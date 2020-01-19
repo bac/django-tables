@@ -5,6 +5,7 @@ get rid of them.
 """
 
 
+from builtins import object
 __all__ = ('options',)
 
 

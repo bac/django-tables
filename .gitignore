@@ -1,6 +1,8 @@
 *.pyc
 *.egg-info
 
+venv*
+
 /MANIFEST
 /dist
 /docs/_build/*

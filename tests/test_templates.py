@@ -6,7 +6,9 @@ generally about testing "out"-functionality of the tables, whether
 via templates or otherwise. Whether a test belongs here or, say, in
 ``test_basic``, is not always a clear-cut decision.
 """
+from __future__ import print_function
 
+from builtins import str
 from django.template import Template, Context, add_to_builtins
 from django.http import HttpRequest
 import django_tables as tables
@@ -46,7 +48,7 @@ def test_columns_and_rows():
     # column name override, hidden columns
     assert [c.name for c in countries.columns] == ['name', 'capital', 'population', 'cc']
     # verbose_name, and fallback to field name
-    assert [unicode(c) for c in countries.columns] == ['Name', 'Capital', 'Population Size', 'Phone Ext.']
+    assert [str(c) for c in countries.columns] == ['Name', 'Capital', 'Population Size', 'Phone Ext.']
 
     # data yielded by each row matches the defined columns
     for row in countries.rows:
@@ -94,9 +96,9 @@ def test_render():
         render(Context({'countries': countries})) == \
         "Germany Berlin 83 49 France None 64 33 Netherlands Amsterdam None 31 Austria None 8 43 "
 
-    print Template("{% for row in countries %}{% if countries.columns.name.visible %}{{ row.name }} {% endif %}{% if countries.columns.tld.visible %}{{ row.tld }} {% endif %}{% endfor %}").\
+    print(Template("{% for row in countries %}{% if countries.columns.name.visible %}{{ row.name }} {% endif %}{% if countries.columns.tld.visible %}{{ row.tld }} {% endif %}{% endfor %}").\
         render(Context({'countries': countries})) == \
-        "Germany France Netherlands Austria"
+        "Germany France Netherlands Austria")
 
 def test_templatetags():
     add_to_builtins('django_tables.app.templatetags.tables')
